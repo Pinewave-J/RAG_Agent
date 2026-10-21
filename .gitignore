@@ -1,0 +1,40 @@
+# ---------- 依赖 ----------
+node_modules/
+.pnp.*
+.yarn/*
+
+# ---------- 环境变量（含密钥，绝不提交） ----------
+# 只提交 .env.example 作为模板
+.env
+.env.local
+.env.*.local
+
+# ---------- 运行时数据 ----------
+# data/ 存索引、向量与用户上传的文件内容，属运行时产物，由首次启动自动生成
+data/
+python-rag/data/
+
+# ---------- Python ----------
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# ---------- 日志 ----------
+*.log
+npm-debug.log*
+yarn-error.log*
+
+# ---------- 编辑器与系统 ----------
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*~
+
+# ---------- 本地工具目录 ----------
+.workbuddy/
+tmp/
+.tmp/
