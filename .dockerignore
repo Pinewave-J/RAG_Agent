@@ -1,0 +1,16 @@
+# 依赖与构建产物不进镜像，容器内用 npm ci 重新安装
+node_modules
+npm-debug.log*
+.git
+.gitignore
+
+# 敏感信息与运行时数据不进镜像
+.env
+.env.local
+data
+
+.DS_Store
+Thumbs.db
+.idea
+.vscode
+docs
