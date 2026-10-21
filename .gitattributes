@@ -1,0 +1,18 @@
+# 默认自动识别文本文件，仓库内统一使用 LF 换行
+* text=auto eol=lf
+
+# Windows 批处理：保持 LF（脚本已实测可用），并确保纯 ASCII 不被转换破坏
+*.cmd text eol=lf
+
+# 二进制资源不做换行转换与差异比对
+*.png binary
+*.jpg binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.bin binary
+*.docx binary
+*.pdf binary
+
+# 锁文件在 diff 中折叠，避免噪音
+package-lock.json -diff linguist-generated
