@@ -1,0 +1,34 @@
+{
+  "name": "kb-qa-agent",
+  "version": "1.0.0",
+  "private": true,
+  "description": "知识问答 Agent —— 基于私有知识库的检索增强（RAG）问答 Web 应用",
+  "main": "server/index.js",
+  "engines": {
+    "node": ">=18.17.0"
+  },
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "reindex": "node scripts/reindex.js",
+    "doctor": "node scripts/doctor.js",
+    "smoke": "node scripts/smoke.js",
+    "check:frontend": "node scripts/check-frontend.js",
+    "test:guard": "node scripts/test-guard.js",
+    "test:retriever": "node scripts/test-retriever.js",
+    "test:cmd": "node scripts/test-cmd-encoding.js",
+    "check:cmd": "node scripts/check-cmd-encoding.js",
+    "verify:hybrid": "node scripts/verify-hybrid.js",
+    "test": "npm run test:guard && npm run test:retriever && npm run test:cmd",
+    "check": "npm run check:frontend && npm run check:cmd && npm run test && npm run doctor && npm run smoke"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2",
+    "multer": "^2.0.1"
+  },
+  "optionalDependencies": {
+    "mammoth": "^1.8.0",
+    "pdf-parse": "^1.1.1"
+  }
+}

@@ -1,0 +1,47 @@
+services:
+  kb-qa:
+    build: .
+    image: kb-qa-agent:1.0.0
+    container_name: kb-qa-agent
+    restart: unless-stopped
+    ports:
+      - "8899:8899"
+    environment:
+      NODE_ENV: production
+      PORT: 8899
+      HOST: 0.0.0.0
+
+      # ---- 对话模型（必填） ----
+      LLM_BASE_URL: ${LLM_BASE_URL:-https://api.deepseek.com/v1}
+      LLM_API_KEY: ${LLM_API_KEY:?请在 .env 或 shell 中设置 LLM_API_KEY}
+      LLM_MODEL: ${LLM_MODEL:-deepseek-chat}
+      LLM_TEMPERATURE: ${LLM_TEMPERATURE:-0.2}
+      # 推理模型的思维链与正文共享该预算，故不能给太小（详见 README）
+      LLM_MAX_TOKENS: ${LLM_MAX_TOKENS:-8192}
+      # 关闭思维链：auto | off | on。模型名识别不出推理模型时用 off
+      LLM_DISABLE_THINKING: ${LLM_DISABLE_THINKING:-auto}
+
+      # ---- 向量检索（选填，留空则自动降级为关键词检索） ----
+      EMBED_BASE_URL: ${EMBED_BASE_URL:-}
+      EMBED_API_KEY: ${EMBED_API_KEY:-}
+      EMBED_MODEL: ${EMBED_MODEL:-text-embedding-v3}
+      EMBED_BATCH_SIZE: ${EMBED_BATCH_SIZE:-10}
+
+      # ---- 管理鉴权（公网部署务必设置） ----
+      ADMIN_TOKEN: ${ADMIN_TOKEN:-}
+
+      # ---- 检索参数 ----
+      RETRIEVAL_TOP_K: ${RETRIEVAL_TOP_K:-5}
+      RETRIEVAL_MIN_COVERAGE: ${RETRIEVAL_MIN_COVERAGE:-0.34}
+      CHUNK_SIZE: ${CHUNK_SIZE:-620}
+      MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-30}
+      RATE_LIMIT_PER_MIN: ${RATE_LIMIT_PER_MIN:-30}
+
+    volumes:
+      # 种子资料：只读挂载，改完文件后点「重建索引」即可生效
+      - ./knowledge:/app/knowledge:ro
+      # 索引与用户上传的资料，必须持久化，否则容器重建后索引丢失
+      - kb-data:/app/data
+
+volumes:
+  kb-data:

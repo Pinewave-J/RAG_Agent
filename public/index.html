@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="color-scheme" content="dark light">
+<meta name="description" content="基于私有知识库的检索增强问答助手，答案只来源于已收录资料，并标注出处。">
+<title>知识问答 Agent</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%234c8dff'/%3E%3Cpath d='M9 10.5h14M9 16h14M9 21.5h8' stroke='white' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ============ 顶栏 ============ -->
+  <header class="topbar">
+    <div class="topbar__left">
+      <div class="brand">
+        <span class="brand__mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32" width="22" height="22">
+            <rect width="32" height="32" rx="9" fill="currentColor"></rect>
+            <path d="M9 10.5h14M9 16h14M9 21.5h8" stroke="#fff" stroke-width="2.6" stroke-linecap="round"></path>
+          </svg>
+        </span>
+        <div class="brand__text">
+          <h1>知识问答 Agent</h1>
+          <p id="brandSub">答案只来自知识库，并标注出处</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="topbar__right">
+      <div class="chips" id="statusChips">
+        <span class="chip chip--muted" id="chipMode" title="检索模式">检索模式读取中</span>
+        <span class="chip chip--muted" id="chipDocs" title="知识库规模">— 份资料</span>
+      </div>
+      <button class="icon-btn" id="btnClear" type="button" title="清空当前对话" aria-label="清空当前对话">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"></path>
+        </svg>
+      </button>
+      <button class="icon-btn" id="btnTheme" type="button" title="切换明暗主题" aria-label="切换明暗主题">
+        <svg class="ico-sun" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+          <circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"></path>
+        </svg>
+        <svg class="ico-moon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path>
+        </svg>
+      </button>
+      <button class="btn btn--primary" id="btnKb" type="button">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H10a2 2 0 0 1 2 2v13a2 2 0 0 0-2-2H5.5A1.5 1.5 0 0 1 4 15.5z"></path>
+          <path d="M20 5.5A1.5 1.5 0 0 0 18.5 4H14a2 2 0 0 0-2 2v13a2 2 0 0 1 2-2h4.5A1.5 1.5 0 0 0 20 15.5z"></path>
+        </svg>
+        <span>知识库管理</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ============ 配置变更提示条 ============ -->
+  <!-- .env 在服务启动后被改动时显示：环境变量只在启动时读一次，不重启不生效 -->
+  <div class="banner" id="envBanner" role="alert" hidden>
+    <span class="banner__icon" aria-hidden="true">⟳</span>
+    <div class="banner__body">
+      <strong>配置文件已修改，但服务仍在用启动时的旧配置。</strong>
+      <span>请回到运行服务的终端窗口按 <kbd>Ctrl</kbd>+<kbd>C</kbd> 停止，再执行 <code>npm start</code> 重启，改动才会生效。</span>
+    </div>
+    <button class="banner__close" id="envBannerClose" type="button" aria-label="关闭提示">✕</button>
+  </div>
+
+  <!-- ============ 对话区 ============ -->
+  <main class="chat" id="chat" aria-live="polite">
+    <div class="chat__inner" id="messages">
+
+      <!-- 欢迎态 -->
+      <section class="welcome" id="welcome">
+        <div class="welcome__mark" aria-hidden="true">
+          <svg viewBox="0 0 48 48" width="46" height="46">
+            <rect width="48" height="48" rx="14" fill="currentColor" opacity=".12"></rect>
+            <path d="M13 16h22M13 24h22M13 32h13" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"></path>
+          </svg>
+        </div>
+        <h2>关于知识库里的内容，随时问我</h2>
+        <p class="welcome__lead">
+          我只依据已导入的资料作答，每个结论都会标注来源编号；<br class="br-desktop">
+          资料里没有的内容，我会直接告诉你「未收录」，不做推测。
+        </p>
+
+        <div class="samples" id="samples">
+          <button class="sample" type="button" data-q="知识库里都收录了哪些内容？">
+            <span class="sample__icon">📚</span><span>知识库里都收录了哪些内容？</span>
+          </button>
+          <button class="sample" type="button" data-q="监理投标文件一般由哪几部分组成？">
+            <span class="sample__icon">📝</span><span>监理投标文件一般由哪几部分组成？</span>
+          </button>
+          <button class="sample" type="button" data-q="投标保证金的缴纳和退还有什么规定？">
+            <span class="sample__icon">💰</span><span>投标保证金的缴纳和退还有什么规定？</span>
+          </button>
+          <button class="sample" type="button" data-q="今天上海的天气怎么样？">
+            <span class="sample__icon">🧪</span><span>今天上海的天气怎么样？（兜底演示）</span>
+          </button>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- ============ 输入区 ============ -->
+  <footer class="composer" id="composer">
+    <div class="composer__inner">
+      <div class="composer__box" id="composerBox">
+        <textarea id="input" rows="1" placeholder="输入你的问题…（Enter 发送，Shift + Enter 换行）" autocomplete="off" spellcheck="false"></textarea>
+        <button class="send-btn" id="btnSend" type="button" aria-label="发送">
+          <svg class="ico-send" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4.5 12h14M12 5.5l6.5 6.5L12 18.5"></path>
+          </svg>
+          <svg class="ico-stop" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+            <rect x="7" y="7" width="10" height="10" rx="2"></rect>
+          </svg>
+        </button>
+      </div>
+      <p class="composer__hint">
+        回答由大模型依据知识库资料生成，请结合来源核对后再用于正式场合。
+      </p>
+    </div>
+  </footer>
+</div>
+
+<!-- ============ 知识库管理抽屉 ============ -->
+<div class="drawer-scrim" id="drawerScrim" hidden></div>
+
+<aside class="drawer" id="drawer" hidden aria-label="知识库管理">
+  <header class="drawer__head">
+    <h2>知识库管理</h2>
+    <button class="icon-btn" id="btnCloseDrawer" type="button" aria-label="关闭">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <path d="M6 6l12 12M18 6L6 18"></path>
+      </svg>
+    </button>
+  </header>
+
+  <div class="drawer__body">
+
+    <!-- 统计 -->
+    <section class="panel">
+      <div class="stats" id="statsGrid">
+        <div class="stat"><div class="stat__v" id="statDocs">—</div><div class="stat__k">份资料</div></div>
+        <div class="stat"><div class="stat__v" id="statChunks">—</div><div class="stat__k">个片段</div></div>
+        <div class="stat"><div class="stat__v" id="statChars">—</div><div class="stat__k">字</div></div>
+        <div class="stat"><div class="stat__v" id="statMode">—</div><div class="stat__k">检索模式</div></div>
+      </div>
+      <p class="panel__note" id="kbUpdatedAt"></p>
+    </section>
+
+    <!-- 管理口令 -->
+    <section class="panel">
+      <h3 class="panel__title">管理口令</h3>
+      <p class="panel__desc">若服务端设置了 <code>ADMIN_TOKEN</code>，导入与删除操作需要填写口令。口令仅保存在本机浏览器。</p>
+      <div class="row">
+        <input type="password" id="adminToken" placeholder="未设置可留空" autocomplete="off">
+        <button class="btn btn--ghost" id="btnSaveToken" type="button">保存</button>
+      </div>
+    </section>
+
+    <!-- 上传 -->
+    <section class="panel">
+      <h3 class="panel__title">导入资料</h3>
+      <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="点击或拖拽文件到此处上传">
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 16V4M7.5 8.5L12 4l4.5 4.5"></path>
+          <path d="M4 15v3.5A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5V15"></path>
+        </svg>
+        <p class="dropzone__main">点击选择，或把文件拖到这里</p>
+        <p class="dropzone__sub" id="dropzoneSub">支持 .md / .txt / .pdf / .docx / .html / .csv / .json</p>
+        <input type="file" id="fileInput" multiple hidden>
+      </div>
+      <div class="upload-list" id="uploadList"></div>
+    </section>
+
+    <!-- 粘贴导入 -->
+    <section class="panel">
+      <h3 class="panel__title">粘贴文本导入</h3>
+      <div class="field">
+        <input type="text" id="pasteTitle" placeholder="资料标题（留空则取正文首行）">
+      </div>
+      <div class="field">
+        <textarea id="pasteText" rows="5" placeholder="把资料正文粘贴到这里，支持 Markdown 格式…"></textarea>
+      </div>
+      <button class="btn btn--primary btn--block" id="btnPasteImport" type="button">导入这段文本</button>
+    </section>
+
+    <!-- 文档列表 -->
+    <section class="panel">
+      <div class="panel__head">
+        <h3 class="panel__title">已收录资料</h3>
+        <button class="btn btn--ghost btn--sm" id="btnRefresh" type="button">刷新</button>
+      </div>
+      <div class="docs" id="docList">
+        <p class="empty">加载中…</p>
+      </div>
+    </section>
+
+    <!-- 维护 -->
+    <section class="panel">
+      <h3 class="panel__title">索引维护</h3>
+      <p class="panel__desc">
+        增删资料后会自动更新索引。<b>重建索引</b>会丢弃现有索引，重新扫描
+        <code>knowledge/</code> 与上传目录并按磁盘上的文件重建 ——
+        适合你直接改过服务器上的文件之后使用；磁盘上还在的文件都会被重新收录，
+        没有文字层的扫描件会被跳过并列出。
+      </p>
+      <div class="row">
+        <button class="btn btn--ghost btn--block" id="btnReindex" type="button">重建索引</button>
+        <button class="btn btn--ghost btn--block" id="btnVectors" type="button">生成向量</button>
+      </div>
+      <p class="panel__note" id="vectorNote"></p>
+    </section>
+
+  </div>
+</aside>
+
+<div class="toasts" id="toasts" aria-live="assertive"></div>
+
+<script src="./app.js"></script>
+</body>
+</html>
